@@ -1,0 +1,24 @@
+# Auditra Backend — Python dependencies
+# Install: pip install -r requirements.txt
+
+# ── Web framework ──────────────────────────────────────────────────────────────
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.9         # multipart/form-data (file upload)
+
+# ── Database ───────────────────────────────────────────────────────────────────
+sqlalchemy>=2.0.0
+# For production swap SQLite → PostgreSQL:
+# psycopg2-binary>=2.9.0
+
+# ── Authentication ─────────────────────────────────────────────────────────────
+python-jose[cryptography]>=3.3.0   # JWT
+passlib[bcrypt]>=1.7.4             # password hashing
+
+# ── OCR ────────────────────────────────────────────────────────────────────────
+paddleocr>=3.4.0
+paddlepaddle>=3.0.0               # CPU; swap for paddlepaddle-gpu on GPU machines
+pillow>=10.0.0
+
+# ── Gemini Vision fallback ─────────────────────────────────────────────────────
+google-genai>=1.5.0
