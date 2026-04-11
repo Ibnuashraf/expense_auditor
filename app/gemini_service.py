@@ -6,6 +6,7 @@ Fallback: Google Gemini Vision
 
 import re
 import json
+import os
 import logging
 import warnings
 from pathlib import Path
@@ -40,8 +41,12 @@ def _get_gemini_client():
     if _gemini_client is None:
         try:
             from google import genai
+            api_key = os.getenv("GEMINI_API_KEY")
+            if not api_key:
+                logging.warning("GEMINI_API_KEY not set; Gemini fallback is disabled.")
+                return None
             _gemini_client = genai.Client(
-                api_key="AIzaSyDrfoQiLsLGX91aFKykqNsgj6LWfhhRu_I"
+                api_key=api_key
             )
         except Exception as exc:
             logging.error("Gemini client init failed: %s", exc)

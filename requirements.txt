@@ -14,11 +14,19 @@ sqlalchemy>=2.0.0
 # ── Authentication ─────────────────────────────────────────────────────────────
 python-jose[cryptography]>=3.3.0   # JWT
 passlib[bcrypt]>=1.7.4             # password hashing
+bcrypt>=4.2.0
 
 # ── OCR ────────────────────────────────────────────────────────────────────────
 paddleocr>=3.4.0
 paddlepaddle>=3.0.0               # CPU; swap for paddlepaddle-gpu on GPU machines
 pillow>=10.0.0
+PyMuPDF>=1.24.0
+pypdf>=4.0.0
 
 # ── Gemini Vision fallback ─────────────────────────────────────────────────────
 google-genai>=1.5.0
+
+# ── RAG / embeddings ───────────────────────────────────────────────────────────
+faiss-cpu>=1.8.0
+sentence-transformers>=3.0.0
+numpy>=1.26.0

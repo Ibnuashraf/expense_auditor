@@ -3,6 +3,7 @@ auth.py — JWT authentication helpers for Auditra.
 """
 
 from datetime import datetime, timedelta
+import os
 from typing import Optional
 
 import bcrypt as _bcrypt
@@ -14,7 +15,7 @@ from sqlalchemy.orm import Session
 from . import database, models
 
 # ── Config ────────────────────────────────────────────────────────────────────
-SECRET_KEY = "auditra-super-secret-key-CHANGE-IN-PROD-2024"
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-only-change-me")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 

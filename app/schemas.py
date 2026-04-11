@@ -72,6 +72,7 @@ class ExpenseUpdate(BaseModel):
     explanation:      Optional[str]   = None
     risk_level:       Optional[str]   = None
     policy_rule:      Optional[str]   = None
+    policy_reference: Optional[str]   = None
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -90,6 +91,7 @@ class ExpenseResponse(BaseModel):
     explanation:      Optional[str]   = "Awaiting policy audit"
     risk_level:       Optional[str]   = "pending"
     policy_rule:      Optional[str]   = None
+    policy_reference: Optional[str]   = None
     user_id:          Optional[int]   = None
     created_at:       Optional[datetime] = None
 

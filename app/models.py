@@ -42,6 +42,7 @@ class Expense(Base):
     explanation       = Column(String, nullable=True, default="Awaiting policy audit")
     risk_level        = Column(String, nullable=True, default="pending")
     policy_rule       = Column(String, nullable=True)                     # primary rule triggered
+    policy_reference  = Column(String, nullable=True)                     # supporting policy citation/context
     created_at        = Column(DateTime, default=datetime.utcnow)
 
     owner = relationship("User", back_populates="expenses")

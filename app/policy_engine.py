@@ -278,8 +278,6 @@ def run_policy_audit(
     # Instead of regex, we ask semantic check for overlap on the purpose and items
     if is_semantically_prohibited(business_purpose):
         violations.append(Violation("rejected", "§7 – Prohibited Expense", f"Business purpose semantically matches prohibited categories."))
-        status = "rejected"
-        risk_level = "high"
 
     # ─── AMOUNT LIMIT EXCEEDED LOGIC ──────────────────────────────────────────
     limit = None
