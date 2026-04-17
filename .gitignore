@@ -1,6 +1,21 @@
+# Python
 venv/
 __pycache__/
 *.pyc
+
+# Database
 expenses.db
+
+# Uploads
 uploads/
+
+# Environment
 .env
+
+# RAG / Vector Store (CRITICAL)
+*.index
+*.pkl
+
+# OS files
+.DS_Store
+Thumbs.db
