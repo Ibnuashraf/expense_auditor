@@ -43,6 +43,10 @@ class Expense(Base):
     risk_level        = Column(String, nullable=True, default="pending")
     policy_rule       = Column(String, nullable=True)                     # primary rule triggered
     policy_reference  = Column(String, nullable=True)                     # supporting policy citation/context
+    ocr_merchant      = Column(String, nullable=True)
+    ocr_amount        = Column(Float, nullable=True)
+    ocr_date          = Column(String, nullable=True)
+    ocr_raw_text      = Column(String, nullable=True)
     created_at        = Column(DateTime, default=datetime.utcnow)
 
     owner = relationship("User", back_populates="expenses")

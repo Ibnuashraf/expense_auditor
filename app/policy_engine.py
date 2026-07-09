@@ -235,6 +235,7 @@ def run_policy_audit(
     receipt_path:         Optional[str] = None,
     recent_expense_dates: Optional[list[str]] = None,
     policy_snippets:      Optional[list[str]] = None,
+    input_mismatch:       Optional[str] = None,
 ) -> PolicyResult:
     """
     Evaluates an expense against the AUDITRA GLOBAL T&E POLICY (v2.1).
@@ -262,9 +263,13 @@ def run_policy_audit(
     if not merchant or not date_str or not amount:
         violations.append(Violation("flagged", "§8 – Missing OCR Data", "Required fields (Merchant, Date, Amount) could not be fully extracted."))
         
-    purpose_words = len(business_purpose.split())
-    if purpose_words < 10:
-        violations.append(Violation("flagged", "§8 – Justification Too Short", "Business purpose must be stated in plain text (min 10 words)."))
+        
+    # Testing stage: do not enforce minimum business purpose length.
+        
+    if input_mismatch:
+        lower_msg = input_mismatch.lower()
+        severity = "flagged" if "manual auditor review required" in lower_msg or "unavailable" in lower_msg else "rejected"
+        violations.append(Violation(severity, "§8 – Input vs Receipt Mismatch", input_mismatch))
         
     # ─── §7 & §8 Time Limits ──────────────────────────────────────────────────
     if date_str:
@@ -283,9 +288,21 @@ def run_policy_audit(
     limit = None
     applied_rule = "None"
     
+    # Normalize category string to match policy standards case-insensitively and with synonyms
+    category_lower = (category or "").lower().strip()
+    category_standard = category
+    if category_lower in ("meals", "meal", "food", "dining"):
+        category_standard = "Meals"
+    elif category_lower in ("lodging", "hotel", "stay", "accommodation", "hostel"):
+        category_standard = "Lodging"
+    elif category_lower in ("transport", "travel", "cab", "taxi", "flight", "train"):
+        category_standard = "Transport"
+    elif category_lower in ("entertainment", "client meal", "gift", "tickets"):
+        category_standard = "Entertainment"
+
     if amount and amount > 0:
         # Meals
-        if category == "Meals":
+        if category_standard == "Meals":
             if currency == "INR":
                 limit_list = MEALS_INDIA_INR.get(region, MEALS_INDIA_INR["other"])
                 limit = limit_list[list_idx]
@@ -300,7 +317,7 @@ def run_policy_audit(
                 limit = limit * 0.8  # Capped at 80%
 
         # Lodging
-        elif category == "Lodging":
+        elif category_standard == "Lodging":
             if currency == "INR":
                 limit_list = HOTELS_INDIA_INR.get(region, HOTELS_INDIA_INR["other"])
                 limit = limit_list[list_idx]
@@ -311,7 +328,7 @@ def run_policy_audit(
                 applied_rule = f"§4.2 International Hotels ({region.title()})"
 
         # Transport
-        elif category == "Transport" and currency == "INR":
+        elif category_standard == "Transport" and currency == "INR":
             # Very simplistic ground transport mapping
             for key, l_array in TRANSPORT_INR.items():
                 if key in combined_text:
@@ -320,7 +337,7 @@ def run_policy_audit(
                     break
         
         # Entertainment / Tickets
-        elif category == "Entertainment":
+        elif category_standard == "Entertainment":
             key = "client meal usd" if currency == "USD" else "client meal inr"
             if "ticket" in combined_text or "event" in combined_text or "conference" in combined_text:
                 key = "tickets"
@@ -378,15 +395,17 @@ def run_policy_audit(
     client = _get_gemini_client()
     if client and context_text and status != "approved":
         prompt = f"""
-Given the following Corporate expense policy context:
+You are Auditra, a strict Expense Policy Auditor AI.
+Given the following Corporate Expense Policy Context:
 ---
 {context_text}
 ---
 The employee (Grade: {grade}) claimed {amount} {currency} for {category} at {merchant}.
-The AI engine marked this claim as {status.upper()}.
+The system marked this claim as {status.upper()}.
 Reasoning inputs: {[v.message for v in violations]}
 
 Draft a professional, 1-sentence explanation citing the exact section and rule from the context text that justifies the {status} verdict.
+DO NOT invent any rules. If a rule does not exist in the context text, default to the reasoning inputs.
 Only output the sentence.
 """
         try:
@@ -405,15 +424,23 @@ Only output the sentence.
         except Exception:
             pass
 
+    rag_statement = (
+        f"RAG Evidence: {policy_snippets[0][:220].strip()}..."
+        if policy_snippets and policy_snippets[0]
+        else "RAG Evidence: No policy excerpt retrieved."
+    )
+
     if not explanation:
         if status == "approved":
-            explanation = f"Approved: The claim is fully compliant. Amount is within policy limits for grade {grade}."
+            explanation = f"Decision: APPROVED. The claim is compliant and within policy limits for grade {grade}."
         else:
             primary = next((v for v in violations if v.severity == "rejected"), violations[0] if violations else None)
-            explanation = f"{status.title()}: {primary.message if primary else 'Review needed'}"
+            explanation = f"Decision: {status.upper()}. {primary.message if primary else 'Manual review required.'}"
             if primary: policy_rule = primary.rule
             if len(violations) > 1:
-                explanation += f" (+{len(violations)-1} other issues)"
+                explanation += f" Additional issues detected: {len(violations)-1}."
+
+    explanation = f"{explanation} {rag_statement}"
 
     return PolicyResult(
         status=status,

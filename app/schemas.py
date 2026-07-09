@@ -5,7 +5,7 @@ schemas.py — Pydantic request/response models for Auditra.
 from datetime import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -51,11 +51,11 @@ class Token(BaseModel):
 # ─────────────────────────────────────────────────────────────────────────────
 
 class ExpenseCreate(BaseModel):
-    merchant:         str   = ""
-    amount:           float = 0.0
-    date:             str   = ""
-    category:         str   = ""
-    business_purpose: str   = ""
+    merchant:         str   = Field(..., min_length=1)
+    amount:           float = Field(..., gt=0)
+    date:             str   = Field(..., min_length=1)
+    category:         str   = Field(..., min_length=1)
+    business_purpose: str   = Field(..., min_length=1)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -92,6 +92,9 @@ class ExpenseResponse(BaseModel):
     risk_level:       Optional[str]   = "pending"
     policy_rule:      Optional[str]   = None
     policy_reference: Optional[str]   = None
+    ocr_merchant:     Optional[str]   = None
+    ocr_amount:       Optional[float] = None
+    ocr_date:         Optional[str]   = None
     user_id:          Optional[int]   = None
     created_at:       Optional[datetime] = None
 

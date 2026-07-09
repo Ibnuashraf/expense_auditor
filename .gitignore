@@ -16,6 +16,10 @@ uploads/
 *.index
 *.pkl
 
+# Node (React frontend in web/)
+web/node_modules/
+web/dist/
+
 # OS files
 .DS_Store
 Thumbs.db

@@ -21,7 +21,9 @@ logger = logging.getLogger(__name__)
 _CATEGORY_MAP: dict[str, list[str]] = {
     "Meals":           ["restaurant", "cafe", "coffee", "starbucks", "food", "dining",
                         "lunch", "dinner", "breakfast", "pizza", "burger", "kfc",
-                        "mcdonald", "swiggy", "zomato", "biryani", "canteen"],
+                        "mcdonald", "swiggy", "zomato", "biryani", "canteen",
+                        "spice", "house", "kitchen", "grill", "bar", "pub", "bistro",
+                        "diner", "bakery", "sweets", "catering", "eats", "eatery"],
     "Transport":       ["uber", "ola", "taxi", "cab", "metro", "train", "flight",
                         "airfare", "airline", "bus", "auto", "petrol", "fuel",
                         "parking", "rapido", "redbus", "irctc", "makemytrip"],

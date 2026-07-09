@@ -5,6 +5,7 @@
 fastapi>=0.115.0
 uvicorn[standard]>=0.30.0
 python-multipart>=0.0.9         # multipart/form-data (file upload)
+python-dotenv>=1.0.1            # load .env for local dev (GEMINI_API_KEY, OPENAI_API_KEY)
 
 # ── Database ───────────────────────────────────────────────────────────────────
 sqlalchemy>=2.0.0
@@ -16,15 +17,18 @@ python-jose[cryptography]>=3.3.0   # JWT
 passlib[bcrypt]>=1.7.4             # password hashing
 bcrypt>=4.2.0
 
-# ── OCR ────────────────────────────────────────────────────────────────────────
-paddleocr>=3.4.0
-paddlepaddle>=3.0.0               # CPU; swap for paddlepaddle-gpu on GPU machines
+# ── Receipt extraction (vision LLMs first; classic OCR optional) ─────────────
 pillow>=10.0.0
 PyMuPDF>=1.24.0
 pypdf>=4.0.0
+google-genai>=1.5.0               # primary path: GEMINI_API_KEY + Gemini Vision
+openai>=1.40.0                    # optional: OPENAI_API_KEY + gpt-4o-mini vision
+pytesseract>=0.3.10               # optional: needs Tesseract binary on PATH
+rapidocr-onnxruntime>=1.4.4       # offline OCR (no API key, no tesseract binary)
 
-# ── Gemini Vision fallback ─────────────────────────────────────────────────────
-google-genai>=1.5.0
+# Optional legacy stack (heavy; not required if using vision APIs)
+# paddleocr>=3.4.0
+# paddlepaddle>=3.0.0
 
 # ── RAG / embeddings ───────────────────────────────────────────────────────────
 faiss-cpu>=1.8.0

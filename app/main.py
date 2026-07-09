@@ -22,9 +22,39 @@ Static
 
 import logging
 import os
+import re
 import shutil
 import uuid
+from datetime import datetime
+from pathlib import Path
 from typing import Optional
+
+_DOTENV_PATH = Path(__file__).resolve().parents[1] / ".env"  # expense_auditor/.env
+_DOTENV_LOADED = False
+_DOTENV_READ_OK = None  # None=dotenv unavailable, True/False=load_dotenv return
+_DOTENV_CHANGED_ANY = None
+
+try:
+    # Load environment variables from expense_auditor/.env when present.
+    # This fixes vision_configured=false when keys are only in a local .env.
+    from dotenv import load_dotenv
+
+    _before = (
+        bool(os.getenv("GEMINI_API_KEY")),
+        bool(os.getenv("OPENAI_API_KEY")),
+    )
+    _DOTENV_READ_OK = load_dotenv(dotenv_path=_DOTENV_PATH, override=False)
+    _after = (
+        bool(os.getenv("GEMINI_API_KEY")),
+        bool(os.getenv("OPENAI_API_KEY")),
+    )
+    # load_dotenv() returns True only if it set at least one previously-unset var.
+    # It can be False even when the file was read (e.g. vars already existed).
+    _DOTENV_LOADED = bool(_DOTENV_READ_OK)
+    _DOTENV_CHANGED_ANY = _before != _after
+except Exception:
+    # dotenv is optional at runtime; env vars may be provided by the shell/host.
+    pass
 
 from fastapi import (
     Depends, FastAPI, File, HTTPException, Query,
@@ -60,6 +90,78 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp", ".pdf"}
 
+
+def _normalize_text(value: Optional[str]) -> str:
+    # Normalize for matching: case-insensitive, ignore punctuation and whitespace.
+    return re.sub(r"\s+", "", re.sub(r"[^a-z0-9\s]", "", (value or "").lower())).strip()
+
+
+def _normalize_date_text(value: Optional[str]) -> str:
+    raw = (value or "").strip()
+    if not raw:
+        return ""
+    raw2 = re.sub(r"\s+", " ", raw).strip()
+    # Accept both numeric dates and month-name formats (e.g. 20 SEP 2026).
+    formats = (
+        "%d/%m/%Y", "%m/%d/%Y", "%Y-%m-%d", "%d-%m-%Y", "%m-%d-%Y", "%d.%m.%Y", "%Y/%m/%d",
+        "%d %b %Y", "%d %B %Y", "%d %b, %Y", "%d %B, %Y",
+    )
+    for fmt in formats:
+        try:
+            return datetime.strptime(raw2, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    # Handle cases like "20 SEP 2026" vs "20/09/2026" more forgivingly.
+    # If parsing fails, fall back to a whitespace/punctuation-insensitive tokenization.
+    return _normalize_text(raw2)
+
+
+def _collect_ocr_mismatches(expense: models.Expense, ocr_data: dict) -> list[str]:
+    mismatches: list[str] = []
+    ocr_merchant = str(ocr_data.get("merchant") or "").strip()
+    ocr_date = str(ocr_data.get("date") or "").strip()
+    ocr_amount_raw = ocr_data.get("amount")
+
+    comparable_fields = 0
+
+    # In testing stage: only do soft merchant checking (case/space insensitive),
+    # and only flag if it's clearly different (not just casing/spacing).
+    if ocr_merchant:
+        entered_merchant = _normalize_text(expense.merchant)
+        extracted_merchant = _normalize_text(ocr_merchant)
+        if entered_merchant and extracted_merchant:
+            comparable_fields += 1
+            if entered_merchant not in extracted_merchant and extracted_merchant not in entered_merchant:
+                mismatches.append(
+                    f"Merchant mismatch: entered '{expense.merchant}' but receipt shows '{ocr_merchant}'."
+                )
+
+    # Amount: only enforce when OCR looks like a real total (non-zero and not obviously an ID).
+    try:
+        if ocr_amount_raw not in (None, ""):
+            ocr_amount = float(ocr_amount_raw)
+            if ocr_amount > 0:
+                comparable_fields += 1
+                if expense.amount is None or abs(float(expense.amount) - ocr_amount) > 0.01:
+                    mismatches.append(
+                        f"Amount mismatch: entered {expense.amount} but receipt shows {ocr_amount}."
+                    )
+    except (TypeError, ValueError):
+        # Don't hard-fail in testing stage.
+        pass
+
+    if ocr_date:
+        comparable_fields += 1
+        if _normalize_date_text(expense.date) != _normalize_date_text(ocr_date):
+            mismatches.append(
+                f"Date mismatch: entered '{expense.date}' but receipt shows '{ocr_date}'."
+            )
+
+    if comparable_fields == 0:
+        return ["OCR extraction unavailable for mandatory cross-checking; manual auditor review required."]
+
+    return mismatches
+
 # ─────────────────────────────────────────────────────────────────────────────
 # DB MIGRATION HELPER (safe ALTER TABLE for SQLite)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -77,6 +179,10 @@ def _run_safe_migrations():
         ("business_purpose",  "TEXT"),
         ("policy_rule",       "TEXT"),            # policy engine
         ("policy_reference",  "TEXT"),            # store retrieved RAG chunk
+        ("ocr_merchant",      "TEXT"),
+        ("ocr_amount",        "FLOAT"),
+        ("ocr_date",          "TEXT"),
+        ("ocr_raw_text",      "TEXT"),
     ]
     with database.engine.connect() as conn:
         for col_name, col_def in new_expense_cols:
@@ -103,7 +209,7 @@ def _run_safe_migrations():
 app = FastAPI(
     title="Auditra API",
     version="3.0.0",
-    description="Policy-First Expense Auditor — Backend API",
+    description="Policy-first expense API with receipt OCR — built so every audit carries the same calm clarity as an aura of trusted automation.",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -142,6 +248,13 @@ def on_startup():
         db.close()
 
     logger.info("Auditra API started. Demo credentials: employee/employee123  auditor/auditor123")
+    # Safe debug: never print secret values, just presence.
+    logger.info(
+        "Vision keys present: GEMINI=%s OPENAI=%s (loaded from %s)",
+        bool(os.getenv("GEMINI_API_KEY")),
+        bool(os.getenv("OPENAI_API_KEY")),
+        str(Path(__file__).resolve().parents[1] / ".env"),
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -150,10 +263,26 @@ def on_startup():
 
 @app.get("/health", tags=["System"])
 def health():
+    gemini = bool(os.getenv("GEMINI_API_KEY"))
+    openai = bool(os.getenv("OPENAI_API_KEY"))
     return {
         "status": "ok",
         "version": "3.0.0",
-        "ocr_engine": "PaddleOCR v3 + Gemini 2.0 Flash fallback",
+        "ocr_engine": "Gemini/OpenAI vision (primary) + Tesseract + optional PaddleOCR",
+        "vision_configured": gemini or openai,
+        # Debug with no secrets: helps confirm you're hitting THIS server process.
+        "debug": {
+            "gemini_present": gemini,
+            "openai_present": openai,
+            "pid": os.getpid(),
+            "cwd": os.getcwd(),
+            "dotenv_path": str(_DOTENV_PATH),
+            "dotenv_exists": _DOTENV_PATH.is_file(),
+            # Note: python-dotenv's return value is "did it set any new vars",
+            # not "did it read the file".
+            "dotenv_load_return": _DOTENV_READ_OK,
+            "dotenv_changed_any": _DOTENV_CHANGED_ANY,
+        },
         "policy_engine": "ACTIVE — Auditra Global T&E Policy (India + USA)",
     }
 
@@ -226,6 +355,8 @@ def create_expense(
     Create a new expense record.
     If category is blank, it will be inferred from the merchant name.
     """
+    if not expense.merchant.strip() or not expense.date.strip() or not expense.category.strip() or not expense.business_purpose.strip():
+        raise HTTPException(status_code=400, detail="Merchant, amount, date, category, and business purpose are mandatory.")
     return crud.create_expense(db, expense, user_id=current_user.id)
 
 
@@ -312,8 +443,96 @@ def update_expense(
         data.status      = None
         data.explanation = None
         data.risk_level  = None
+    else:
+        # Auditors are restricted to decision metadata only.
+        data.merchant = None
+        data.amount = None
+        data.date = None
+        data.category = None
+        data.business_purpose = None
 
     updated = crud.update_expense(db, expense_id, data)
+
+    # Automatically re-run policy audit on employee edit if receipt is present
+    if updated.receipt_path and os.path.isfile(updated.receipt_path):
+        ocr_data = {}
+        if updated.ocr_raw_text:
+            ocr_data = {
+                "merchant": updated.ocr_merchant,
+                "amount": updated.ocr_amount,
+                "date": updated.ocr_date,
+                "raw_text": updated.ocr_raw_text
+            }
+        else:
+            try:
+                ocr_data = extract_receipt_data(updated.receipt_path)
+                if ocr_data and "error" not in ocr_data:
+                    updated.ocr_raw_text = ocr_data.get("raw_text")
+                    db.commit()
+            except Exception as exc:
+                logger.warning("Update expense OCR failed: %s", exc)
+
+        input_mismatch_warnings = _collect_ocr_mismatches(updated, ocr_data) if ocr_data else []
+
+        # Fetch recent meal dates for duplicate checking
+        recent_meals = (
+            db.query(models.Expense)
+            .filter(
+                models.Expense.user_id == updated.user_id,
+                models.Expense.category == "Meals",
+                models.Expense.id != expense_id,
+            )
+            .order_by(models.Expense.id.desc())
+            .limit(10)
+            .all()
+        )
+        recent_dates = [e.date for e in recent_meals if e.date]
+
+        # RAG snippets
+        policy_snippets = ["No relevant policy found"]
+        try:
+            from app.rag_store import load_store
+            from app.rag_retriever import retrieve_relevant_chunks
+            
+            index, chunks = load_store()
+            query = (
+                f"Category: {updated.category}\nAmount: {updated.amount}\n"
+                f"Location: {updated.merchant}\nEmployee Grade: {updated.owner.grade if updated.owner else 'E-1'}\n"
+                f"Purpose: {updated.business_purpose}\n\n"
+                "Retrieve exact policy rules including:\n- spending limits\n- restrictions\n- exceptions"
+            )
+            policy_snippets = retrieve_relevant_chunks(query, chunks, original_index=index, category=updated.category)
+        except Exception as exc:
+            logger.error(f"Update expense RAG failure: {exc}")
+
+        policy_result = run_policy_audit(
+            merchant             = updated.merchant or "",
+            amount               = updated.amount or 0.0,
+            date_str             = updated.date or "",
+            category             = updated.category or "Other",
+            business_purpose     = updated.business_purpose or "",
+            grade                = updated.owner.grade if updated.owner else "E-1",
+            raw_text             = updated.ocr_raw_text or "",
+            receipt_path         = updated.receipt_path,
+            recent_expense_dates = recent_dates,
+            policy_snippets      = policy_snippets,
+            input_mismatch       = " ".join(input_mismatch_warnings) if input_mismatch_warnings else None,
+        )
+
+        updated.status            = policy_result.status
+        updated.explanation       = policy_result.explanation
+        updated.risk_level        = policy_result.risk_level
+        updated.policy_rule       = policy_result.policy_rule
+        if policy_snippets:
+            updated.policy_reference = policy_snippets[0]
+
+        try:
+            db.commit()
+            db.refresh(updated)
+        except Exception as exc:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"DB error: {exc}")
+
     return updated
 
 
@@ -379,16 +598,32 @@ def upload_receipt(
         logger.exception("OCR failed")
 
     # ── Apply OCR data to expense ─────────────────────────────────────────────
+    input_mismatch_warnings: list[str] = []
+
     if ocr_data and "error" not in ocr_data:
-        if ocr_data.get("merchant"):
+        expense.ocr_merchant = str(ocr_data.get("merchant") or "").strip() or None
+        try:
+            expense.ocr_amount = float(ocr_data.get("amount")) if ocr_data.get("amount") not in (None, "") else None
+        except (TypeError, ValueError):
+            expense.ocr_amount = None
+        expense.ocr_date = str(ocr_data.get("date") or "").strip() or None
+        expense.ocr_raw_text = str(ocr_data.get("raw_text") or "").strip() or None
+
+        if ocr_data.get("merchant") and not expense.merchant:
             expense.merchant = ocr_data["merchant"]
+        
         if ocr_data.get("amount"):
             try:
-                expense.amount = float(ocr_data["amount"])
+                ocr_amt = float(ocr_data["amount"])
+                if not expense.amount:
+                    expense.amount = ocr_amt
             except (TypeError, ValueError):
                 pass
+                
         if ocr_data.get("date"):
-            expense.date = ocr_data["date"]
+            ocr_d = ocr_data["date"]
+            if not expense.date:
+                expense.date = ocr_d
 
         # ── Infer category from extracted text (if not already set) ────────────
         if not expense.category or expense.category == "Other":
@@ -399,6 +634,8 @@ def upload_receipt(
     elif ocr_data and "error" in ocr_data:
         ocr_error = ocr_data["error"]
         logger.warning("OCR error: %s", ocr_error)
+
+    input_mismatch_warnings = _collect_ocr_mismatches(expense, ocr_data)
 
     # First, fetch recent meal dates for duplicate checking (§11.4)
     recent_meals = (
@@ -438,6 +675,7 @@ def upload_receipt(
         receipt_path         = file_location,
         recent_expense_dates = recent_dates,
         policy_snippets      = policy_snippets,
+        input_mismatch       = " ".join(input_mismatch_warnings) if input_mismatch_warnings else None,
     )
 
     # ── Update expense with policy result ─────────────────────────────────────
@@ -459,9 +697,9 @@ def upload_receipt(
         "expense_id":  expense_id,
         "receipt_url": f"/uploads/{safe_name}",
         "ocr_data": {
-            "merchant": expense.merchant,
-            "amount":   expense.amount,
-            "date":     expense.date,
+            "merchant": expense.ocr_merchant or expense.merchant,
+            "amount":   expense.ocr_amount if expense.ocr_amount is not None else expense.amount,
+            "date":     expense.ocr_date or expense.date,
             "category": expense.category,
         },
         "audit": {
@@ -519,16 +757,61 @@ def re_audit_expense(
     )
     recent_dates = [e.date for e in recent_meals if e.date]
 
+    ocr_data: dict = {}
+    raw_text = ""
+    if expense.ocr_raw_text:
+        raw_text = expense.ocr_raw_text
+        ocr_data = {
+            "merchant": expense.ocr_merchant,
+            "amount": expense.ocr_amount,
+            "date": expense.ocr_date,
+            "raw_text": raw_text
+        }
+    elif expense.receipt_path and os.path.isfile(expense.receipt_path):
+        try:
+            ocr_data = extract_receipt_data(expense.receipt_path)
+            if ocr_data and "error" not in ocr_data:
+                raw_text = str(ocr_data.get("raw_text") or "")
+                expense.ocr_raw_text = raw_text
+                db.commit()
+        except Exception as exc:
+            logger.warning("Re-audit OCR refresh failed: %s", exc)
+
+    input_mismatch_warnings = _collect_ocr_mismatches(expense, ocr_data) if ocr_data else []
+
+    policy_snippets: list[str] = ["No relevant policy found"]
+    try:
+        from app.rag_store import load_store
+        from app.rag_retriever import retrieve_relevant_chunks
+
+        index, chunks = load_store()
+        query = (
+            f"Category: {expense.category}\nAmount: {expense.amount}\n"
+            f"Location: {expense.merchant}\nEmployee Grade: {expense.owner.grade if expense.owner else 'E-1'}\n"
+            f"Purpose: {expense.business_purpose}\n\n"
+            "Retrieve exact policy rules including:\n- spending limits\n- restrictions\n- exceptions"
+        )
+        policy_snippets = retrieve_relevant_chunks(
+            query,
+            chunks,
+            original_index=index,
+            category=expense.category,
+        )
+    except Exception as exc:
+        logger.error("Re-audit RAG failure: %s", exc)
+
     result = run_policy_audit(
-        merchant         = expense.merchant or "",
-        amount           = expense.amount or 0,
-        date_str         = expense.date or "",
-        category         = expense.category or "Other",
-        business_purpose = expense.business_purpose or "",
-        grade            = expense.owner.grade if expense.owner else "E-1",
-        raw_text         = "",                # raw OCR text no longer available post-upload
-        receipt_path     = expense.receipt_path,
+        merchant             = expense.merchant or "",
+        amount               = expense.amount or 0,
+        date_str             = expense.date or "",
+        category             = expense.category or "Other",
+        business_purpose     = expense.business_purpose or "",
+        grade                = expense.owner.grade if expense.owner else "E-1",
+        raw_text             = raw_text,
+        receipt_path         = expense.receipt_path,
         recent_expense_dates = recent_dates,
+        policy_snippets      = policy_snippets,
+        input_mismatch       = " ".join(input_mismatch_warnings) if input_mismatch_warnings else None,
     )
 
     # Persist updated decision
@@ -536,6 +819,7 @@ def re_audit_expense(
     expense.risk_level        = result.risk_level
     expense.explanation       = result.explanation
     expense.policy_rule       = result.policy_rule
+    expense.policy_reference  = policy_snippets[0] if policy_snippets else expense.policy_reference
 
     db.commit()
     db.refresh(expense)
