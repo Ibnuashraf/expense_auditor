@@ -1,5 +1,10 @@
 # Auditra — Policy-First AI Expense Auditor
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?logo=vercel&style=for-the-badge)](https://web-ten-liart-x8dqms5qwd.vercel.app)
+[![GitHub](https://img.shields.io/badge/GitHub-Repo-181717?logo=github&style=for-the-badge)](https://github.com/Ibnuashraf/expense_auditor)
+
+> 🌐 **Live App**: [https://web-ten-liart-x8dqms5qwd.vercel.app](https://web-ten-liart-x8dqms5qwd.vercel.app)
+
 Auditra is a modern, enterprise-grade AI-powered expense auditing platform. It replaces fragile, manual expense review workflows with a secure, automated, and policy-aware validation system.
 
 Built using a **FastAPI backend** and a **Vite + React frontend**, it leverages **Google Gemini Vision** for receipt parsing and a local **RAG (Retrieval-Augmented Generation)** database to ground audit decisions directly in your corporate policy guidelines.
