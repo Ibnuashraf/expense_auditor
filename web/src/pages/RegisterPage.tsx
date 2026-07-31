@@ -28,66 +28,81 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-md glass-panel ambient-shadow rounded-xl p-8 border border-outline-variant/20">
+    <div className="min-h-screen bg-[#f9f7f0] text-[#333333] flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md bg-white rounded-[26px] p-8 md:p-10 border border-[#d0d5dd] shadow-lg">
         <Link
           to="/login"
-          className="inline-flex items-center text-sm font-semibold text-surface-tint hover:underline mb-6"
+          className="inline-flex items-center text-xs font-bold text-[#2e96ff] hover:underline mb-6"
         >
-          <Icon name="arrow_back" className="text-sm mr-1" /> Back to login
+          <Icon name="arrow_back" className="text-base mr-1" /> Back to Login
         </Link>
-        <h1 className="text-2xl font-bold font-[family-name:var(--font-headline)] mb-2">Create account</h1>
-        <p className="text-on-surface-variant text-sm mb-8">Register for the Auditra workspace.</p>
+        <h1 className="text-3xl font-extrabold text-[#13426f] font-headline mb-1">Create Account</h1>
+        <p className="text-[#616c8a] text-sm mb-6 font-semibold">Register for the Auditra policy platform.</p>
 
         <form className="space-y-4" onSubmit={onSubmit}>
           {error && (
-            <div className="rounded-lg bg-error-container/80 text-on-error-container text-sm px-4 py-3">{error}</div>
+            <div className="rounded-2xl bg-[#f8d7da] text-[#721c24] border border-[#f5c6cb] text-xs font-bold px-4 py-3">{error}</div>
           )}
-          <input
-            className="w-full px-4 py-3 rounded-lg bg-surface-container-high outline-none focus:ring-2 ring-surface-tint/30"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-          <input
-            className="w-full px-4 py-3 rounded-lg bg-surface-container-high outline-none focus:ring-2 ring-surface-tint/30"
-            placeholder="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            className="w-full px-4 py-3 rounded-lg bg-surface-container-high outline-none focus:ring-2 ring-surface-tint/30"
-            placeholder="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <div className="flex gap-4">
-            <select
-              className="flex-1 px-4 py-3 rounded-lg bg-surface-container-high outline-none"
-              value={role}
-              onChange={(e) => setRole(e.target.value as "employee" | "auditor")}
-            >
-              <option value="employee">Employee</option>
-              <option value="auditor">Auditor</option>
-            </select>
+          <div>
+            <label className="block text-xs font-bold text-[#616c8a] uppercase tracking-wider mb-1">Username</label>
             <input
-              className="w-24 px-3 py-3 rounded-lg bg-surface-container-high outline-none"
-              placeholder="Grade"
-              value={grade}
-              onChange={(e) => setGrade(e.target.value)}
+              className="w-full px-5 py-3.5 rounded-full bg-[#f9f7f0] border border-[#d0d5dd] text-sm font-semibold text-[#333333] outline-none focus:ring-2 focus:ring-[#2e96ff]"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
             />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-[#616c8a] uppercase tracking-wider mb-1">Email</label>
+            <input
+              className="w-full px-5 py-3.5 rounded-full bg-[#f9f7f0] border border-[#d0d5dd] text-sm font-semibold text-[#333333] outline-none focus:ring-2 focus:ring-[#2e96ff]"
+              placeholder="Email address"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-[#616c8a] uppercase tracking-wider mb-1">Password</label>
+            <input
+              className="w-full px-5 py-3.5 rounded-full bg-[#f9f7f0] border border-[#d0d5dd] text-sm font-semibold text-[#333333] outline-none focus:ring-2 focus:ring-[#2e96ff]"
+              placeholder="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="block text-xs font-bold text-[#616c8a] uppercase tracking-wider mb-1">Role</label>
+              <select
+                className="w-full px-5 py-3.5 rounded-full bg-[#f9f7f0] border border-[#d0d5dd] text-sm font-semibold text-[#333333] outline-none focus:ring-2 focus:ring-[#2e96ff]"
+                value={role}
+                onChange={(e) => setRole(e.target.value as "employee" | "auditor")}
+              >
+                <option value="employee">Employee</option>
+                <option value="auditor">Auditor</option>
+              </select>
+            </div>
+            <div className="w-28">
+              <label className="block text-xs font-bold text-[#616c8a] uppercase tracking-wider mb-1">Grade</label>
+              <input
+                className="w-full px-4 py-3.5 rounded-full bg-[#f9f7f0] border border-[#d0d5dd] text-sm font-semibold text-[#333333] text-center outline-none focus:ring-2 focus:ring-[#2e96ff]"
+                placeholder="E-3"
+                value={grade}
+                onChange={(e) => setGrade(e.target.value)}
+              />
+            </div>
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-primary text-on-primary rounded-lg font-bold disabled:opacity-60"
+            className="w-full py-4 mt-2 bg-[#2e96ff] text-white rounded-full font-extrabold tracking-tight text-base shadow-[rgba(154,207,246,0.5)_0px_7px_0px_0px] hover:translate-y-[2px] transition-all disabled:opacity-60"
           >
-            {loading ? "Creating…" : "Register"}
+            {loading ? "Creating Account…" : "Complete Registration"}
           </button>
         </form>
       </div>

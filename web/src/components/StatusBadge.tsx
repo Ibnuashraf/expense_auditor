@@ -3,35 +3,35 @@ import type { Expense } from "../lib/api";
 function statusClass(status: string) {
   switch (status) {
     case "approved":
-      return "bg-primary-fixed text-on-primary-fixed";
+      return "bg-[#bde1f9] text-[#13426f] border border-[#2e96ff]/30";
     case "pending":
-      return "bg-surface-container-highest text-on-surface-variant";
+      return "bg-[#ffffff] text-[#616c8a] border border-[#d0d5dd]";
     case "flagged":
-      return "bg-tertiary-fixed text-on-tertiary-container";
+      return "bg-[#fff3cd] text-[#856404] border border-[#ffebaba0]";
     case "rejected":
-      return "bg-error-container text-on-error-container";
+      return "bg-[#f8d7da] text-[#721c24] border border-[#f5c6cb]";
     default:
-      return "bg-surface-container-high text-on-surface-variant";
+      return "bg-[#ffffff] text-[#616c8a] border border-[#d0d5dd]";
   }
 }
 
 function riskClass(risk: string | null | undefined) {
   switch (risk) {
     case "low":
-      return "bg-secondary-container text-on-secondary-container";
+      return "bg-[#bde1f9] text-[#13426f]";
     case "medium":
-      return "bg-tertiary-fixed text-on-tertiary-container";
+      return "bg-[#fff3cd] text-[#856404]";
     case "high":
-      return "bg-error-container text-on-error-container";
+      return "bg-[#f8d7da] text-[#721c24]";
     default:
-      return "bg-surface-container-high text-on-surface-variant";
+      return "bg-[#ffffff] text-[#616c8a]";
   }
 }
 
 export function StatusBadge({ status }: { status: string }) {
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold capitalize ${statusClass(status)}`}
+      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold capitalize ${statusClass(status)}`}
     >
       {status}
     </span>
@@ -42,7 +42,7 @@ export function RiskBadge({ risk }: { risk: Expense["risk_level"] }) {
   const label = risk === "pending" || !risk ? "—" : risk;
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold capitalize ${riskClass(risk)}`}
+      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold capitalize ${riskClass(risk)}`}
     >
       {label}
     </span>

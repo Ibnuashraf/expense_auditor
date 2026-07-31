@@ -58,10 +58,10 @@ export function DashboardPage() {
           <button
             type="button"
             onClick={() => setModal(true)}
-            className="bg-gradient-to-br from-primary to-primary-container text-on-primary px-6 py-3 rounded-lg font-bold shadow-md hover:opacity-90 transition-opacity flex items-center gap-2 animate-in slide-in-from-right fade-in"
+            className="bg-[#2e96ff] text-white px-7 py-3 rounded-full font-bold text-sm shadow-[rgba(154,207,246,0.5)_0px_7px_0px_0px] hover:translate-y-[2px] hover:shadow-[rgba(154,207,246,0.5)_0px_4px_0px_0px] transition-all flex items-center gap-2"
           >
             <Icon name="add" />
-            New expense
+            New Expense
           </button>
         </>
       }
@@ -72,47 +72,52 @@ export function DashboardPage() {
         onCreated={(id) => navigate(`/expense/${id}`)}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 animate-in slide-in-from-bottom-4 fade-in duration-500">
-        <div className="bg-surface-container-lowest p-8 rounded-xl custom-shadow relative overflow-hidden hover:scale-[1.02] transition-transform">
-          <div className="absolute top-0 right-0 p-6 opacity-10">
-            <Icon name="payments" className="text-6xl" />
+      {/* Stat Cards - Relief Style */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        {/* Navy Primary Feature Card */}
+        <div className="bg-[#13426f] text-white p-7 rounded-[22px] shadow-sm relative overflow-hidden">
+          <div className="absolute top-4 right-4 opacity-10">
+            <Icon name="payments" className="text-7xl" />
           </div>
-          <p className="text-sm font-medium text-secondary uppercase tracking-widest mb-4">Total (loaded)</p>
-          <div className="flex items-baseline gap-2">
-            <h2 className="text-4xl font-extrabold text-on-surface font-[family-name:var(--font-headline)]">
-              {formatMoney(total)}
-            </h2>
-          </div>
-          <p className="text-xs text-secondary mt-4">{items.length} expense(s) in view</p>
+          <p className="text-xs font-bold text-[#bde1f9] uppercase tracking-wider mb-2">Total Claim Value</p>
+          <h2 className="text-4xl font-extrabold text-white font-headline">
+            {formatMoney(total)}
+          </h2>
+          <p className="text-xs text-[#bde1f9]/80 mt-4 font-semibold">{items.length} claim(s) tracked</p>
         </div>
-        <div className="bg-surface-container-lowest p-8 rounded-xl custom-shadow border-l-4 border-surface-tint">
-          <p className="text-sm font-medium text-secondary uppercase tracking-widest mb-4">Pending</p>
+
+        {/* Snow Card 1 */}
+        <div className="bg-white p-7 rounded-[22px] border border-[#d0d5dd] shadow-sm">
+          <p className="text-xs font-bold text-[#616c8a] uppercase tracking-wider mb-2">Pending Audits</p>
           <div className="flex items-baseline gap-2">
-            <h2 className="text-4xl font-extrabold text-on-surface font-[family-name:var(--font-headline)]">
+            <h2 className="text-4xl font-extrabold text-[#13426f] font-headline">
               {String(pending).padStart(2, "0")}
             </h2>
-            <span className="text-xs font-medium text-secondary">transactions</span>
+            <span className="text-xs font-bold text-[#616c8a]">claims</span>
           </div>
+          <p className="text-xs text-[#616c8a] mt-4">Awaiting policy validation</p>
         </div>
-        <div className="bg-tertiary-container p-8 rounded-xl relative text-on-tertiary-container">
-          <p className="text-sm font-medium uppercase tracking-widest mb-4 opacity-90">Flagged</p>
-          <div className="flex items-center gap-4">
-            <h2 className="text-4xl font-extrabold text-white">{String(flagged).padStart(2, "0")}</h2>
-            <Icon name="warning" className="text-tertiary-fixed text-2xl" filled />
+
+        {/* Snow Card 2 - Flagged */}
+        <div className="bg-white p-7 rounded-[22px] border border-[#d0d5dd] shadow-sm">
+          <p className="text-xs font-bold text-[#616c8a] uppercase tracking-wider mb-2">Flagged Items</p>
+          <div className="flex items-center gap-3">
+            <h2 className="text-4xl font-extrabold text-[#13426f] font-headline">{String(flagged).padStart(2, "0")}</h2>
+            <span className="px-3 py-1 rounded-full bg-[#fff3cd] text-[#856404] text-xs font-bold">Action Needed</span>
           </div>
-          <p className="text-sm mt-4 opacity-80 leading-relaxed">Items requiring attention per policy engine.</p>
+          <p className="text-xs text-[#616c8a] mt-4">Requires auditor or user override</p>
         </div>
       </div>
 
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h3 className="text-2xl font-bold tracking-tight text-on-surface font-[family-name:var(--font-headline)]">
-            Recent expenses
+          <h3 className="text-2xl font-extrabold tracking-tight text-[#13426f] font-headline">
+            Recent Expense Claims
           </h3>
           <div className="relative w-full sm:w-72">
-            <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg" />
+            <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-[#616c8a] text-lg" />
             <input
-              className="w-full pl-10 pr-4 py-2 bg-surface-container-high border-none rounded-lg text-sm focus:ring-2 ring-surface-tint/30 outline-none"
+              className="w-full pl-11 pr-4 py-2.5 bg-white border border-[#d0d5dd] rounded-full text-sm font-medium focus:ring-2 focus:ring-[#2e96ff] outline-none text-[#333333]"
               placeholder="Search merchant, purpose…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -122,60 +127,62 @@ export function DashboardPage() {
         </div>
 
         {err && (
-          <div className="rounded-lg bg-error-container/50 text-on-error-container px-4 py-3 text-sm">{err}</div>
+          <div className="rounded-2xl bg-[#f8d7da] text-[#721c24] border border-[#f5c6cb] px-5 py-3 text-sm font-bold">{err}</div>
         )}
 
-        <div className="bg-surface-container-lowest rounded-xl overflow-hidden custom-shadow">
+        <div className="bg-white rounded-[22px] border border-[#d0d5dd] overflow-hidden shadow-sm">
           {loading ? (
-            <p className="p-8 text-secondary text-center">Loading expenses…</p>
+            <p className="p-10 text-[#616c8a] font-semibold text-center">Loading expenses…</p>
           ) : items.length === 0 ? (
-            <p className="p-8 text-secondary text-center">No expenses yet. Create one to get started.</p>
+            <p className="p-10 text-[#616c8a] font-semibold text-center">No expenses yet. Click "New Expense" to start.</p>
           ) : (
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-surface-container-low">
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-secondary">Date</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-secondary">Merchant</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-secondary">Category</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-secondary text-right">
-                    Amount
-                  </th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-secondary text-center">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-secondary text-center">
-                    Risk
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-container">
-                {items.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="hover:bg-surface-container-low/50 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/expense/${row.id}`)}
-                  >
-                    <td className="px-6 py-5 text-sm text-secondary">{formatDisplayDate(row.date || row.created_at)}</td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center">
-                          <Icon name={categoryIcon(row.category)} className="text-sm" />
-                        </div>
-                        <span className="text-sm font-semibold text-on-surface">{row.merchant || "—"}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 text-sm text-on-surface-variant">{row.category || "—"}</td>
-                    <td className="px-6 py-5 text-sm font-bold text-on-surface text-right">{formatMoney(row.amount)}</td>
-                    <td className="px-6 py-5 text-center">
-                      <StatusBadge status={row.status} />
-                    </td>
-                    <td className="px-6 py-5 text-center">
-                      <RiskBadge risk={row.risk_level} />
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-[#f9f7f0] border-b border-[#d0d5dd]">
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-[#616c8a]">Date</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-[#616c8a]">Merchant</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-[#616c8a]">Category</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-[#616c8a] text-right">
+                      Amount
+                    </th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-[#616c8a] text-center">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-[#616c8a] text-center">
+                      Risk Level
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-[#d0d5dd]/50">
+                  {items.map((row) => (
+                    <tr
+                      key={row.id}
+                      className="hover:bg-[#bde1f9]/20 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/expense/${row.id}`)}
+                    >
+                      <td className="px-6 py-4 text-sm font-semibold text-[#616c8a]">{formatDisplayDate(row.date || row.created_at)}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-[#bde1f9]/60 text-[#13426f] flex items-center justify-center">
+                            <Icon name={categoryIcon(row.category)} className="text-base" />
+                          </div>
+                          <span className="text-sm font-bold text-[#13426f]">{row.merchant || "—"}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-semibold text-[#333333]">{row.category || "—"}</td>
+                      <td className="px-6 py-4 text-sm font-extrabold text-[#13426f] text-right">{formatMoney(row.amount)}</td>
+                      <td className="px-6 py-4 text-center">
+                        <StatusBadge status={row.status} />
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <RiskBadge risk={row.risk_level} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

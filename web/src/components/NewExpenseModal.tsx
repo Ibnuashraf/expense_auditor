@@ -61,80 +61,99 @@ export function NewExpenseModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md transition-all duration-300">
-      <div className="bg-surface-container-lowest rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 animate-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#13426f]/40 backdrop-blur-sm transition-all duration-300">
+      <div className="bg-white rounded-[26px] border border-[#d0d5dd] shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-8">
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h2 className="text-xl font-bold font-[family-name:var(--font-headline)]">New expense</h2>
-            <p className="text-sm text-on-surface-variant mt-1">Create a claim, then attach a receipt to run policy audit. A receipt is mandatory.</p>
+            <h2 className="text-2xl font-extrabold text-[#13426f] font-headline">New Expense Claim</h2>
+            <p className="text-xs text-[#616c8a] mt-1 font-semibold">Attach a receipt to trigger automatic OCR policy evaluation.</p>
           </div>
-          <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-surface-container-high transition-colors">
+          <button type="button" onClick={onClose} className="p-2.5 rounded-full hover:bg-[#bde1f9]/40 text-[#13426f] transition-all">
             <Icon name="close" />
           </button>
         </div>
         <form className="space-y-4" onSubmit={submit}>
           {error && (
-            <div className="text-sm text-on-error-container bg-error-container/30 rounded-lg px-3 py-2">{error}</div>
+            <div className="text-xs font-bold text-[#721c24] bg-[#f8d7da] border border-[#f5c6cb] rounded-2xl px-4 py-3">{error}</div>
           )}
-          <input
-            className="w-full px-4 py-3 rounded-lg bg-surface-container-high outline-none focus:ring-2 ring-surface-tint/30"
-            placeholder="Merchant"
-            value={merchant}
-            onChange={(e) => setMerchant(e.target.value)}
-            required
-          />
-          <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-bold text-[#616c8a] uppercase mb-1">Merchant</label>
             <input
-              className="w-full px-4 py-3 rounded-lg bg-surface-container-high outline-none"
-              placeholder="Amount"
-              type="number"
-              step="0.01"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-            />
-            <input
-              className="w-full px-4 py-3 rounded-lg bg-surface-container-high outline-none"
-              placeholder="Date (DD/MM/YYYY)"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
+              className="w-full px-5 py-3 rounded-full bg-[#f9f7f0] border border-[#d0d5dd] text-sm font-semibold outline-none focus:ring-2 focus:ring-[#2e96ff] text-[#333333]"
+              placeholder="e.g. Starbucks, Hilton, Uber"
+              value={merchant}
+              onChange={(e) => setMerchant(e.target.value)}
               required
             />
           </div>
-          <input
-            className="w-full px-4 py-3 rounded-lg bg-surface-container-high outline-none"
-            placeholder="Category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            required
-          />
-          <textarea
-            className="w-full px-4 py-3 rounded-lg bg-surface-container-high outline-none min-h-[100px] text-sm"
-            placeholder="Business purpose (10+ words recommended)"
-            value={businessPurpose}
-            onChange={(e) => setBusinessPurpose(e.target.value)}
-            required
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-[#616c8a] uppercase mb-1">Amount</label>
+              <input
+                className="w-full px-5 py-3 rounded-full bg-[#f9f7f0] border border-[#d0d5dd] text-sm font-semibold outline-none focus:ring-2 focus:ring-[#2e96ff] text-[#333333]"
+                placeholder="Amount (INR/USD)"
+                type="number"
+                step="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#616c8a] uppercase mb-1">Date</label>
+              <input
+                className="w-full px-5 py-3 rounded-full bg-[#f9f7f0] border border-[#d0d5dd] text-sm font-semibold outline-none focus:ring-2 focus:ring-[#2e96ff] text-[#333333]"
+                placeholder="DD/MM/YYYY"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
+            </div>
+          </div>
           <div>
-            <label className="block text-xs font-bold text-secondary uppercase mb-2">Receipt <span className="text-error">*</span></label>
+            <label className="block text-xs font-bold text-[#616c8a] uppercase mb-1">Category</label>
+            <input
+              className="w-full px-5 py-3 rounded-full bg-[#f9f7f0] border border-[#d0d5dd] text-sm font-semibold outline-none focus:ring-2 focus:ring-[#2e96ff] text-[#333333]"
+              placeholder="Meals, Lodging, Transport, Entertainment"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-[#616c8a] uppercase mb-1">Business Purpose</label>
+            <textarea
+              className="w-full px-5 py-3.5 rounded-2xl bg-[#f9f7f0] border border-[#d0d5dd] text-sm font-medium outline-none focus:ring-2 focus:ring-[#2e96ff] text-[#333333] min-h-[90px]"
+              placeholder="Detailed explanation of business rationale"
+              value={businessPurpose}
+              onChange={(e) => setBusinessPurpose(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-[#616c8a] uppercase mb-2">Receipt Document <span className="text-[#721c24]">*</span></label>
             <input
               type="file"
               accept="image/*,.pdf"
               onChange={(e) => setFile(e.target.files?.[0] || null)}
-              className="text-sm w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-container file:text-on-primary-container hover:file:bg-primary/20 transition-all cursor-pointer"
+              className="text-xs text-[#333333] w-full file:mr-4 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#bde1f9] file:text-[#13426f] hover:file:bg-[#2e96ff] hover:file:text-white file:transition-all cursor-pointer"
             />
-            {file && <p className="text-xs text-surface-tint mt-1">{file.name}</p>}
+            {file && <p className="text-xs text-[#2e96ff] font-bold mt-1.5">{file.name}</p>}
           </div>
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 py-3 rounded-lg bg-surface-container-high font-semibold">
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-3.5 rounded-full bg-white border border-[#d0d5dd] font-extrabold text-sm text-[#13426f] hover:bg-[#f9f7f0]"
+            >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-3 rounded-lg bg-primary text-on-primary font-bold disabled:opacity-50"
+              className="flex-1 py-3.5 rounded-full bg-[#2e96ff] text-white font-extrabold text-sm shadow-[rgba(154,207,246,0.5)_0px_7px_0px_0px] hover:translate-y-[2px] disabled:opacity-50"
             >
-              {loading ? "Saving…" : "Submit"}
+              {loading ? "Creating..." : "Submit Claim"}
             </button>
           </div>
         </form>
