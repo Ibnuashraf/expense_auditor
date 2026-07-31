@@ -1,0 +1,19 @@
+# Railway config — Auditra FastAPI backend
+# Docs: https://docs.railway.com/reference/config-as-code
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+watchPatterns = ["app/**", "requirements.txt", "Dockerfile", "data/**"]
+
+[deploy]
+startCommand = "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "ALWAYS"
+overlapSeconds = 30
+drainingSeconds = 10
+
+# Production overrides (Railway environment name must match)
+[environments.production.deploy]
+healthcheckTimeout = 360

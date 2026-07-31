@@ -256,6 +256,20 @@ def on_startup():
         str(Path(__file__).resolve().parents[1] / ".env"),
     )
 
+    # Preload RAG model + policy index at boot (avoids 5–15s cold start on first audit)
+    try:
+        from .rag_store import get_model, load_store
+
+        get_model()
+        index, chunks = load_store()
+        logger.info(
+            "RAG preloaded: model=all-MiniLM-L6-v2  chunks=%d  index=%s",
+            len(chunks),
+            "ready" if index is not None else "missing",
+        )
+    except Exception as exc:
+        logger.warning("RAG preload skipped: %s", exc)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HEALTH

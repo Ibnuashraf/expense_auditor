@@ -9,8 +9,8 @@ python-dotenv>=1.0.1            # load .env for local dev (GEMINI_API_KEY, OPENA
 
 # ── Database ───────────────────────────────────────────────────────────────────
 sqlalchemy>=2.0.0
-# For production swap SQLite → PostgreSQL:
-# psycopg2-binary>=2.9.0
+# PostgreSQL (Railway / Neon / Supabase)
+psycopg2-binary>=2.9.0
 
 # ── Authentication ─────────────────────────────────────────────────────────────
 python-jose[cryptography]>=3.3.0   # JWT
